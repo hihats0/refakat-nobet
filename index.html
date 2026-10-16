@@ -245,6 +245,7 @@ function aralik(n) {
 }
 
 function gunun(g) { return nobetler.filter(n => n.gun === g); }
+const tekil = a => [...new Set(a)].join(", ");
 function adlar(liste) { return liste.map(n => kacis(n.kisi)).join(" + "); }
 
 function durumCiz() {
@@ -259,17 +260,17 @@ function durumCiz() {
   if (aktif.length) {
     html += `<div><span class="rozet canli">Şu an hastanede</span>
       <div class="satir"><div class="kim">${adlar(aktif)}</div>
-      <div class="saat">${aktif.map(n => kisaSaat(n.bitis)).join(", ")}'e kadar</div></div></div>`;
+      <div class="saat">${tekil(aktif.map(n => kisaSaat(n.bitis)))}'e kadar</div></div></div>`;
   }
   const buGeceGoster = buGece.filter(n => !aktif.includes(n));
   if (!aktif.length || buGeceGoster.length) {
     html += `<div><div class="etiket">Bu gece · ${fmtGun.format(simdi)}</div>
       <div class="satir"><div class="kim ${buGece.length ? "" : "bos"}">${buGeceGoster.length ? adlar(buGeceGoster) : (buGece.length ? adlar(buGece) : "Kimse atanmadı")}</div>
-      <div class="saat">${(buGeceGoster.length ? buGeceGoster : buGece).map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)).join(", ")}</div></div></div>`;
+      <div class="saat">${tekil((buGeceGoster.length ? buGeceGoster : buGece).map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)))}</div></div></div>`;
   }
   html += `<div><div class="etiket">Yarın gece · ${fmtGun.format(gunEkle(simdi,1))}</div>
     <div class="satir"><div class="kim ${yarinGece.length ? "" : "bos"}" style="font-size:1.15rem">${yarinGece.length ? adlar(yarinGece) : "Kimse atanmadı"}</div>
-    <div class="saat">${yarinGece.map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)).join(", ")}</div></div></div>`;
+    <div class="saat">${tekil(yarinGece.map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)))}</div></div></div>`;
   $("durum").innerHTML = html;
 }
 
