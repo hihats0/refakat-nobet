@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Refakat Nöbeti</title>
+<meta name="theme-color" content="#2f6f5e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<style>
+:root{
+  --bg:#f5f3ee; --kart:#fff; --yazi:#1f2523; --soluk:#6b736f; --cizgi:#e3dfd6;
+  --ana:#2f6f5e; --ana-acik:#e3f0eb; --uyari:#b5482f; --uyari-acik:#fbe9e4; --sari:#fff6d9;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#141816; --kart:#1d2321; --yazi:#e9ecea; --soluk:#9aa39f; --cizgi:#2d3532;
+    --ana:#5fb39a; --ana-acik:#1f3530; --uyari:#e57c63; --uyari-acik:#3a2420; --sari:#36301c; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--yazi);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 16px}
+h1{font-size:1.35rem;margin:0}
+h2{font-size:1rem;margin:24px 0 8px;color:var(--soluk);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--cizgi);background:var(--kart);color:var(--yazi);padding:8px 14px}
+button.ana{background:var(--ana);border-color:var(--ana);color:#fff;font-weight:600}
+button.tehlike{color:var(--uyari);border-color:var(--uyari)}
+button.kucuk{padding:4px 10px;font-size:.9rem}
+.durum{background:var(--kart);border:1px solid var(--cizgi);border-radius:16px;padding:16px;display:grid;gap:12px}
+.durum .satir{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.durum .etiket{color:var(--soluk);font-size:.9rem}
+.durum .kim{font-size:1.4rem;font-weight:700}
+.durum .kim.bos{color:var(--uyari)}
+.durum .saat{color:var(--soluk);font-size:.9rem;white-space:nowrap}
+.rozet{display:inline-block;background:var(--ana-acik);color:var(--ana);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600;margin-bottom:4px}
+.rozet.canli::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ana);margin-right:6px;animation:nabiz 1.6s infinite}
+@keyframes nabiz{50%{opacity:.25}}
+.gunler{display:grid;gap:8px}
+.gun{background:var(--kart);border:1px solid var(--cizgi);border-radius:12px;padding:10px 14px;display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start}
+.gun.bugun{border-color:var(--ana);box-shadow:0 0 0 1px var(--ana) inset}
+.gun.bos{background:var(--uyari-acik);border-color:transparent}
+.gun .tarih b{display:block}
+.gun .tarih span{color:var(--soluk);font-size:.85rem}
+.nobetler{display:grid;gap:6px}
+.nobet{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nobet .ad{font-weight:600}
+.nobet .ek{color:var(--soluk);font-size:.85rem}
+.nobet.tik{cursor:pointer;border-radius:8px;margin:-4px -6px;padding:4px 6px}
+.nobet.tik:hover{background:var(--ana-acik)}
+.bosyazi{color:var(--uyari);font-weight:600}
+.ozet{display:flex;flex-wrap:wrap;gap:8px}
+.ozet span{background:var(--kart);border:1px solid var(--cizgi);border-radius:999px;padding:4px 12px;font-size:.9rem}
+.alt{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.bant{background:var(--sari);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.92rem}
+dialog{border:none;border-radius:16px;padding:0;background:var(--kart);color:var(--yazi);width:min(420px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+form{padding:18px;display:grid;gap:12px}
+form h3{margin:0 0 4px}
+label{display:grid;gap:4px;font-size:.9rem;color:var(--soluk)}
+input,textarea{font:inherit;color:var(--yazi);background:var(--bg);border:1px solid var(--cizgi);border-radius:10px;padding:10px;width:100%}
+.iki{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dugmeler{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dugmeler .sol{margin-right:auto}
+.hata{color:var(--uyari);font-size:.9rem;min-height:1.2em;margin:0}
+.yukleniyor{color:var(--soluk);text-align:center;padding:24px}
+@media (max-width:380px){.gun{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>🌙 Refakat Nöbeti</h1>
+    <button id="duzenleBtn" class="kucuk">✏️ Düzenle</button>
+  </header>
+
+  <div id="bant" class="bant" hidden>
+    <span>Düzenleme açık. Bir güne dokunup kişi atayın.</span>
+    <button id="cikisBtn" class="kucuk">Kapat</button>
+  </div>
+
+  <section id="durum" class="durum"><div class="yukleniyor">Yükleniyor…</div></section>
+
+  <h2>Takvim</h2>
+  <div id="gunler" class="gunler"></div>
+  <div class="alt">
+    <button id="gecmisBtn" class="kucuk">Geçmiş günleri göster</button>
+    <button id="dahaBtn" class="kucuk">2 hafta daha</button>
+  </div>
+
+  <h2>Kim kaç gece kaldı</h2>
+  <div id="ozet" class="ozet"></div>
+</main>
+
+<dialog id="pinDlg">
+  <form id="pinForm" method="dialog">
+    <h3 id="pinBaslik">Düzenleme şifresi</h3>
+    <p id="pinAciklama" style="margin:0;color:var(--soluk);font-size:.9rem"></p>
+    <label>Şifre<input id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" required minlength="4"></label>
+    <label id="pin2Label" hidden>Şifre (tekrar)<input id="pin2Input" type="password" inputmode="numeric" minlength="4"></label>
+    <p class="hata" id="pinHata"></p>
+    <div class="dugmeler">
+      <button type="button" data-kapat>Vazgeç</button>
+      <button class="ana" type="submit">Devam</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="nobetDlg">
+  <form id="nobetForm" method="dialog">
+    <h3 id="nobetBaslik">Nöbet ata</h3>
+    <label>Kim kalacak?<input id="fKisi" list="kisiListe" required maxlength="60" autocomplete="off"></label>
+    <datalist id="kisiListe"></datalist>
+    <label>Gün<input id="fGun" type="date" required></label>
+    <div class="iki">
+      <label>Başlangıç<input id="fBas" type="time" required value="20:00"></label>
+      <label>Bitiş<input id="fBit" type="time" required value="08:00"></label>
+    </div>
+    <label>Not (isteğe bağlı)<textarea id="fNot" rows="2" maxlength="300"></textarea></label>
+    <p class="hata" id="nobetHata"></p>
+    <div class="dugmeler">
+      <button type="button" class="tehlike sol" id="silBtn" hidden>Sil</button>
+      <button type="button" data-kapat>Vazgeç</button>
+      <button class="ana" type="submit">Kaydet</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const URL_ = "https://zustwkuoyezlaroklnoe.supabase.co";
+const KEY = "sb_publishable_mhsPrJVSrPmun7baREnZLw_f_0Zqs4b";
+const H = { apikey: KEY, "Content-Type": "application/json" };
+
+let nobetler = [];
+let pin = null;
+let gunSayisi = 14;
+let gecmisGoster = false;
+let duzenlenen = null;
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const isoGun = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const gunEkle = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const kisaSaat = t => (t || "").slice(0,5);
+const fmtGun = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
+const fmtHafta = new Intl.DateTimeFormat("tr-TR", { weekday: "long" });
+const tarihObj = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const kacis = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const HATALAR = {
+  YANLIS_PIN: "Şifre yanlış.",
+  KILITLI: "Çok fazla yanlış deneme. 15 dakika sonra tekrar deneyin.",
+  PIN_YOK: "Henüz şifre belirlenmemiş.",
+  KISA: "Şifre en az 4 karakter olmalı.",
+  ZATEN_VAR: "Şifre zaten belirlenmiş."
+};
+
+function hafizaOku(k){ try { return localStorage.getItem(k); } catch { return null; } }
+function hafizaYaz(k, v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+
+async function rpc(ad, govde) {
+  const r = await fetch(`${URL_}/rest/v1/rpc/${ad}`, { method: "POST", headers: H, body: JSON.stringify(govde || {}) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function yukle() {
+  const r = await fetch(`${URL_}/rest/v1/nobet?select=*&order=gun.asc,baslangic.asc`, { headers: H });
+  if (!r.ok) throw new Error("Veri alınamadı");
+  nobetler = await r.json();
+  ciz();
+}
+
+// Gece yarısını geçen vardiya: bitiş <= başlangıç ise ertesi gün biter
+function aralik(n) {
+  const bas = tarihObj(n.gun);
+  const [bh, bm] = n.baslangic.split(":").map(Number);
+  const [eh, em] = n.bitis.split(":").map(Number);
+  bas.setHours(bh, bm, 0, 0);
+  const bit = tarihObj(n.gun);
+  bit.setHours(eh, em, 0, 0);
+  if (bit <= bas) bit.setDate(bit.getDate() + 1);
+  return [bas, bit];
+}
+
+function gunun(g) { return nobetler.filter(n => n.gun === g); }
+function adlar(liste) { return liste.map(n => kacis(n.kisi)).join(" + "); }
+
+function durumCiz() {
+  const simdi = new Date();
+  const bugun = isoGun(simdi);
+  const yarin = isoGun(gunEkle(simdi, 1));
+  const aktif = nobetler.filter(n => { const [a, b] = aralik(n); return a <= simdi && simdi < b; });
+  const buGece = gunun(bugun);
+  const yarinGece = gunun(yarin);
+  let html = "";
+
+  if (aktif.length) {
+    html += `<div><span class="rozet canli">Şu an hastanede</span>
+      <div class="satir"><div class="kim">${adlar(aktif)}</div>
+      <div class="saat">${aktif.map(n => kisaSaat(n.bitis)).join(", ")}'e kadar</div></div></div>`;
+  }
+  const buGeceGoster = buGece.filter(n => !aktif.includes(n));
+  if (!aktif.length || buGeceGoster.length) {
+    html += `<div><div class="etiket">Bu gece · ${fmtGun.format(simdi)}</div>
+      <div class="satir"><div class="kim ${buGece.length ? "" : "bos"}">${buGeceGoster.length ? adlar(buGeceGoster) : (buGece.length ? adlar(buGece) : "Kimse atanmadı")}</div>
+      <div class="saat">${(buGeceGoster.length ? buGeceGoster : buGece).map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)).join(", ")}</div></div></div>`;
+  }
+  html += `<div><div class="etiket">Yarın gece · ${fmtGun.format(gunEkle(simdi,1))}</div>
+    <div class="satir"><div class="kim ${yarinGece.length ? "" : "bos"}" style="font-size:1.15rem">${yarinGece.length ? adlar(yarinGece) : "Kimse atanmadı"}</div>
+    <div class="saat">${yarinGece.map(n => kisaSaat(n.baslangic) + "–" + kisaSaat(n.bitis)).join(", ")}</div></div></div>`;
+  $("durum").innerHTML = html;
+}
+
+function takvimCiz() {
+  const bugun = new Date(); bugun.setHours(0,0,0,0);
+  let bas = bugun;
+  if (gecmisGoster && nobetler.length) {
+    const ilk = tarihObj(nobetler[0].gun);
+    if (ilk < bas) bas = ilk;
+  }
+  const son = gunEkle(bugun, gunSayisi - 1);
+  const sonKayit = nobetler.length ? tarihObj(nobetler[nobetler.length-1].gun) : son;
+  const bitis = sonKayit > son ? sonKayit : son;
+  const bugunIso = isoGun(bugun);
+
+  let html = "";
+  for (let d = new Date(bas); d <= bitis; d = gunEkle(d, 1)) {
+    const g = isoGun(d);
+    const liste = gunun(g);
+    const gecmis = g < bugunIso;
+    const sinif = ["gun", g === bugunIso ? "bugun" : "", !liste.length && !gecmis ? "bos" : ""].join(" ");
+    const ic = liste.length
+      ? liste.map(n => `<div class="nobet ${pin ? "tik" : ""}" data-id="${n.id}">
+          <div><div class="ad">${kacis(n.kisi)}</div>
+          <div class="ek">${kisaSaat(n.baslangic)}–${kisaSaat(n.bitis)}${n.notu ? " · " + kacis(n.notu) : ""}</div></div>
+          ${pin ? "<span>✏️</span>" : ""}</div>`).join("")
+      : `<div class="${gecmis ? "ek" : "bosyazi"}">${gecmis ? "Kayıt yok" : "Boş"}</div>`;
+    const ekle = pin ? `<button class="kucuk" data-ekle="${g}" style="justify-self:start">+ Kişi ata</button>` : "";
+    html += `<div class="${sinif}" ${gecmis ? 'style="opacity:.6"' : ""}>
+      <div class="tarih"><b>${g === bugunIso ? "Bugün" : fmtGun.format(d)}</b><span>${fmtHafta.format(d)}</span></div>
+      <div class="nobetler">${ic}${ekle}</div></div>`;
+  }
+  $("gunler").innerHTML = html;
+}
+
+function ozetCiz() {
+  const sayac = {};
+  nobetler.forEach(n => { sayac[n.kisi] = (sayac[n.kisi] || 0) + 1; });
+  const sirali = Object.entries(sayac).sort((a, b) => b[1] - a[1]);
+  $("ozet").innerHTML = sirali.length
+    ? sirali.map(([k, s]) => `<span>${kacis(k)} · <b>${s}</b></span>`).join("")
+    : `<span style="color:var(--soluk)">Henüz kayıt yok</span>`;
+  $("kisiListe").innerHTML = sirali.map(([k]) => `<option value="${kacis(k)}">`).join("");
+}
+
+function ciz() {
+  durumCiz(); takvimCiz(); ozetCiz();
+  $("bant").hidden = !pin;
+  $("duzenleBtn").hidden = !!pin;
+  $("gecmisBtn").textContent = gecmisGoster ? "Geçmişi gizle" : "Geçmiş günleri göster";
+}
+
+// --- şifre ---
+let pinKurulum = false;
+async function duzenlemeAc() {
+  $("pinHata").textContent = "";
+  $("pinInput").value = ""; $("pin2Input").value = "";
+  try { pinKurulum = !(await rpc("pin_var_mi")); } catch { pinKurulum = false; }
+  $("pinBaslik").textContent = pinKurulum ? "Düzenleme şifresi belirle" : "Düzenleme şifresi";
+  $("pinAciklama").textContent = pinKurulum
+    ? "İlk kez açılıyor. Belirlediğiniz şifreyi yalnız düzenleyecek kişi bilsin; görmek için şifre gerekmez."
+    : "Nöbetleri yalnız şifreyi bilen değiştirebilir.";
+  $("pin2Label").hidden = !pinKurulum;
+  $("pin2Input").required = pinKurulum;
+  $("pinInput").autocomplete = pinKurulum ? "new-password" : "current-password";
+  $("pinDlg").showModal();
+  $("pinInput").focus();
+}
+
+$("pinForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const p = $("pinInput").value;
+  $("pinHata").textContent = "";
+  try {
+    if (pinKurulum) {
+      if (p !== $("pin2Input").value) { $("pinHata").textContent = "İki şifre aynı değil."; return; }
+      const s = await rpc("pin_kur", { p_pin: p });
+      if (s !== "ok") { $("pinHata").textContent = HATALAR[s] || s; return; }
+    } else {
+      const s = await rpc("pin_kontrol", { p_pin: p });
+      if (s !== "ok") { $("pinHata").textContent = HATALAR[s] || s; return; }
+    }
+    pin = p; hafizaYaz("refakat_pin", p);
+    $("pinDlg").close(); ciz();
+  } catch { $("pinHata").textContent = "Bağlantı hatası, tekrar deneyin."; }
+});
+
+// --- nöbet formu ---
+function formAc(nobet, gun) {
+  duzenlenen = nobet || null;
+  $("nobetHata").textContent = "";
+  $("nobetBaslik").textContent = nobet ? "Nöbeti düzenle" : "Nöbet ata";
+  $("fKisi").value = nobet ? nobet.kisi : "";
+  $("fGun").value = nobet ? nobet.gun : gun;
+  $("fBas").value = nobet ? kisaSaat(nobet.baslangic) : "20:00";
+  $("fBit").value = nobet ? kisaSaat(nobet.bitis) : "08:00";
+  $("fNot").value = nobet ? (nobet.notu || "") : "";
+  $("silBtn").hidden = !nobet;
+  $("nobetDlg").showModal();
+  $("fKisi").focus();
+}
+
+async function yetkiliCagri(ad, govde, hataYeri) {
+  const s = await rpc(ad, { p_pin: pin, ...govde });
+  if (s === "ok") return true;
+  if (s === "YANLIS_PIN" || s === "PIN_YOK") { pin = null; hafizaYaz("refakat_pin", null); ciz(); }
+  $(hataYeri).textContent = HATALAR[s] || s;
+  return false;
+}
+
+$("nobetForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    const ok = await yetkiliCagri("nobet_kaydet", {
+      p_id: duzenlenen ? duzenlenen.id : null,
+      p_gun: $("fGun").value, p_bas: $("fBas").value, p_bit: $("fBit").value,
+      p_kisi: $("fKisi").value.trim(), p_not: $("fNot").value
+    }, "nobetHata");
+    if (ok) { $("nobetDlg").close(); await yukle(); }
+  } catch { $("nobetHata").textContent = "Kaydedilemedi, bağlantıyı kontrol edin."; }
+});
+
+$("silBtn").addEventListener("click", async () => {
+  if (!duzenlenen || !confirm(`${duzenlenen.kisi} için ${fmtGun.format(tarihObj(duzenlenen.gun))} nöbeti silinsin mi?`)) return;
+  try {
+    const ok = await yetkiliCagri("nobet_sil", { p_id: duzenlenen.id }, "nobetHata");
+    if (ok) { $("nobetDlg").close(); await yukle(); }
+  } catch { $("nobetHata").textContent = "Silinemedi, bağlantıyı kontrol edin."; }
+});
+
+$("gunler").addEventListener("click", e => {
+  if (!pin) return;
+  const ekle = e.target.closest("[data-ekle]");
+  if (ekle) return formAc(null, ekle.dataset.ekle);
+  const n = e.target.closest(".nobet[data-id]");
+  if (n) formAc(nobetler.find(x => x.id === n.dataset.id));
+});
+
+document.querySelectorAll("[data-kapat]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
+$("duzenleBtn").addEventListener("click", duzenlemeAc);
+$("cikisBtn").addEventListener("click", () => { pin = null; hafizaYaz("refakat_pin", null); ciz(); });
+$("gecmisBtn").addEventListener("click", () => { gecmisGoster = !gecmisGoster; ciz(); });
+$("dahaBtn").addEventListener("click", () => { gunSayisi += 14; ciz(); });
+
+// açılış
+(async () => {
+  const kayitli = hafizaOku("refakat_pin");
+  if (kayitli) {
+    try { if ((await rpc("pin_kontrol", { p_pin: kayitli })) === "ok") pin = kayitli; else hafizaYaz("refakat_pin", null); } catch {}
+  }
+  try { await yukle(); } catch { $("durum").innerHTML = '<div class="yukleniyor">Veriye ulaşılamadı. Sayfayı yenileyin.</div>'; }
+  setInterval(() => yukle().catch(() => {}), 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) yukle().catch(() => {}); });
+})();
+</script>
+</body>
+</html>
