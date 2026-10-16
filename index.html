@@ -119,7 +119,7 @@ button.cip.secili{background:var(--ana);border-color:var(--ana);color:#fff}
   <section class="reyting">
     <div id="puanBas" class="yorumlar"></div>
     <form id="puanForm" style="padding:0;gap:10px">
-      <div style="font-weight:600">Anneanne puanlıyor: bu gece kim nasıldı?</div>
+      <div style="font-weight:600">👵 Anneanne puanlıyor: bu gece kim mirası hak etti?</div>
       <div class="cipler" id="pKisiler"></div>
       <datalist id="kisiListe"></datalist>
       <div class="yildizSec" id="yildizSec"></div>
@@ -325,7 +325,19 @@ function kisilerCiz() {
 }
 
 // --- anneannenin karnesi: anneanne refakatçileri puanlar ---
-const PUAN_YAZI = ["", "Hiç memnun kalmadım 😤", "Hep telefondaydı 📱", "İdare eder 😐", "Hamarat evladım 😊", "Kuzum benim, 10 numara 😇"];
+const PUAN_YAZI = ["", "Mirastan çıkarıldı 📜❌", "Bütün gece telefonda, ben ölsem ruhu duymaz 📱", "Eh işte, komşunun kızı daha iyi bakar 😐", "Allah razı olsun, ama çay biraz açıktı ☕", "Altın bileziklerin hepsi senin kuzum 💛👑"];
+const ANNEANNE_LAFLARI = [
+  "ör. Gece 3'te su istedim, rüyasında 'tamam anneanne' dedi, uyanmadı",
+  "ör. Hemşireyle benden çok muhabbet etti, düğüne çağırırlar yakında",
+  "ör. Yastığımı üç kere düzeltti, üçünde de daha kötü oldu",
+  "ör. Getirdiği çorbayı ben yapsam daha iyi yapardım, yatağımdan kalkıp",
+  "ör. Horladı, yan yataktaki teyze şikayet etti, ben de katıldım",
+  "ör. Kolonyayı sevdim, kendini değil",
+  "ör. Bütün gece TikTok izledi, ben de izledim, güzeldi aslında",
+  "ör. Ayağımı ovdu, vasiyete bir satır eklendi",
+  "ör. Serumu kendi taktı sandım, meğer hemşireymiş, yine de puan veriyorum",
+  "ör. Sabah 'iyi uyudun mu' dedi, sen hiç uyumadın ki uyuyup uyumadığımı bilesin"
+];
 const MADALYA = ["🥇", "🥈", "🥉"];
 const yildizYaz = n => "★".repeat(n) + "☆".repeat(5 - n);
 let puanKisi = null;
@@ -347,7 +359,7 @@ function puanCiz() {
         <div style="flex:1"><b>${kacis(s.ad)}</b><div class="alt2">${s.say} puan · ${PUAN_YAZI[Math.round(s.ort)].replace(/ \S+$/, "")}</div></div>
         <div style="text-align:right"><div style="font-size:1.4rem;font-weight:800">${s.ort.toFixed(1).replace(".", ",")}</div>
         <div class="yildizlar" style="font-size:.85rem">${yildizYaz(Math.round(s.ort))}</div></div></div>`).join("")
-    : `<div class="alt2">Anneanne henüz kimseye puan vermedi. Herkes tetikte.</div>`;
+    : `<div class="alt2">Anneanne henüz kimseye puan vermedi. Herkes tetikte, vasiyet masada. 📜</div>`;
   const adaylar = puanAdaylari();
   if (!puanKisi || !adaylar.includes(puanKisi)) puanKisi = adaylar[0] || null;
   $("pKisiler").innerHTML = adaylar.length
@@ -355,6 +367,7 @@ function puanCiz() {
     : `<span class="alt2">Önce refakatçi listesine isim eklenmeli.</span>`;
   $("yildizSec").innerHTML = [1,2,3,4,5].map(i => `<button type="button" data-yildiz="${i}" class="${i <= yildiz ? "dolu" : ""}" aria-label="${i} yıldız">★</button>`).join("");
   $("puanEtiket").textContent = yildiz ? PUAN_YAZI[yildiz] : "Yıldıza dokunun";
+  if (!$("pYorum").placeholder.startsWith("ör.") || !yildiz) $("pYorum").placeholder = ANNEANNE_LAFLARI[Math.floor(Math.random() * ANNEANNE_LAFLARI.length)];
   $("yorumlar").innerHTML = puanlar.slice(0, 10).map(p => `<div class="yorum">
       <div class="ust"><b>👵 → ${kacis(p.kim)}</b><span>${fmtGun.format(tarihObj(p.gun))}${pin ? ` <button class="kucuk tehlike" data-puan-sil="${p.id}" style="padding:0 6px">×</button>` : ""}</span></div>
       <div class="yildizlar">${yildizYaz(p.yildiz)}</div>
@@ -382,7 +395,7 @@ $("puanForm").addEventListener("submit", async e => {
     if (!r.ok) throw new Error();
     yildiz = 0; $("pYorum").value = "";
     await yukle();
-    $("puanEtiket").textContent = `${kim} karnesine işlendi 📝`;
+    $("puanEtiket").textContent = `${kim} karnesine işlendi 📝 Noter bilgilendirildi.`;
   } catch { $("puanHata").textContent = "Gönderilemedi, tekrar deneyin."; }
 });
 
