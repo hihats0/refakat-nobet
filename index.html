@@ -63,6 +63,26 @@ input,textarea{font:inherit;color:var(--yazi);background:var(--bg);border:1px so
 .dugmeler .sol{margin-right:auto}
 .hata{color:var(--uyari);font-size:.9rem;min-height:1.2em;margin:0}
 .yukleniyor{color:var(--soluk);text-align:center;padding:24px}
+.cipler{display:flex;flex-wrap:wrap;gap:8px}
+.cip{background:var(--kart);border:1px solid var(--cizgi);border-radius:999px;padding:6px 14px;font-size:.95rem;display:inline-flex;align-items:center;gap:6px}
+button.cip.secili{background:var(--ana);border-color:var(--ana);color:#fff}
+.cip .x{border:none;background:none;padding:0 0 0 4px;color:var(--uyari);font-size:1.1rem;line-height:1}
+.kisiEkle{display:flex;gap:8px;margin-top:10px}
+.kisiEkle input{flex:1}
+.reyting{background:var(--kart);border:1px solid var(--cizgi);border-radius:16px;padding:16px;display:grid;gap:14px}
+.puanBas{display:flex;align-items:center;gap:14px}
+.puanBas .buyuk{font-size:2.6rem;font-weight:800;line-height:1}
+.puanBas .alt2{color:var(--soluk);font-size:.85rem}
+.yildizlar{color:#e0a526;letter-spacing:2px}
+.yildizSec{display:flex;gap:4px}
+.yildizSec button{border:none;background:none;font-size:2rem;padding:0 2px;color:var(--cizgi);line-height:1}
+.yildizSec button.dolu{color:#e0a526}
+.puanEtiket{color:var(--soluk);font-size:.9rem;min-height:1.3em}
+.yorumlar{display:grid;gap:10px}
+.yorum{border-top:1px solid var(--cizgi);padding-top:10px}
+.yorum .ust{display:flex;justify-content:space-between;gap:8px;font-size:.9rem}
+.yorum .ust span{color:var(--soluk)}
+.yorum p{margin:4px 0 0}
 @media (max-width:380px){.gun{grid-template-columns:1fr}}
 </style>
 </head>
@@ -80,12 +100,36 @@ input,textarea{font:inherit;color:var(--yazi);background:var(--bg);border:1px so
 
   <section id="durum" class="durum"><div class="yukleniyor">Yükleniyor…</div></section>
 
+  <h2>Refakatçiler</h2>
+  <div id="kisiler" class="cipler"></div>
+  <form id="kisiForm" class="kisiEkle" style="padding:0" hidden>
+    <input id="yeniKisi" placeholder="Yeni kişi adı" maxlength="60" required autocomplete="off">
+    <button class="ana" type="submit">Ekle</button>
+  </form>
+  <p class="hata" id="kisiHata"></p>
+
   <h2>Takvim</h2>
   <div id="gunler" class="gunler"></div>
   <div class="alt">
     <button id="gecmisBtn" class="kucuk">Geçmiş günleri göster</button>
     <button id="dahaBtn" class="kucuk">2 hafta daha</button>
   </div>
+
+  <h2>⭐ Anneanne Reytingi</h2>
+  <section class="reyting">
+    <div class="puanBas" id="puanBas"></div>
+    <form id="puanForm" style="padding:0;gap:10px">
+      <div style="font-weight:600">Bu geceki hastanızı değerlendirin</div>
+      <div class="yildizSec" id="yildizSec"></div>
+      <div class="puanEtiket" id="puanEtiket">Yıldıza dokunun</div>
+      <label>Adınız<input id="pKim" list="kisiListe" required maxlength="60" autocomplete="off"></label>
+      <datalist id="kisiListe"></datalist>
+      <label>Yorum (isteğe bağlı)<input id="pYorum" maxlength="200" placeholder="ör. Çorbayı beğenmedi, hemşireye laf attı"></label>
+      <p class="hata" id="puanHata"></p>
+      <div class="dugmeler"><button class="ana" type="submit">Puanı gönder</button></div>
+    </form>
+    <div class="yorumlar" id="yorumlar"></div>
+  </section>
 
   <h2>Kim kaç gece kaldı</h2>
   <div id="ozet" class="ozet"></div>
@@ -108,8 +152,14 @@ input,textarea{font:inherit;color:var(--yazi);background:var(--bg);border:1px so
 <dialog id="nobetDlg">
   <form id="nobetForm" method="dialog">
     <h3 id="nobetBaslik">Nöbet ata</h3>
-    <label>Kim kalacak?<input id="fKisi" list="kisiListe" required maxlength="60" autocomplete="off"></label>
-    <datalist id="kisiListe"></datalist>
+    <div style="display:grid;gap:6px">
+      <span style="font-size:.9rem;color:var(--soluk)" id="fKisiEtiket">Kim kalacak? (birden fazla seçilebilir)</span>
+      <div class="cipler" id="fKisiler"></div>
+      <div class="kisiEkle" style="margin-top:2px">
+        <input id="fYeniKisi" placeholder="Listede yoksa yeni kişi" maxlength="60" autocomplete="off">
+        <button type="button" id="fYeniBtn">Ekle</button>
+      </div>
+    </div>
     <label>Gün<input id="fGun" type="date" required></label>
     <div class="iki">
       <label>Başlangıç<input id="fBas" type="time" required value="20:00"></label>
@@ -131,6 +181,10 @@ const KEY = "sb_publishable_mhsPrJVSrPmun7baREnZLw_f_0Zqs4b";
 const H = { apikey: KEY, "Content-Type": "application/json" };
 
 let nobetler = [];
+let kisiler = [];
+let puanlar = [];
+let secili = new Set();
+let yildiz = 0;
 let pin = null;
 let gunSayisi = 14;
 let gecmisGoster = false;
@@ -163,10 +217,18 @@ async function rpc(ad, govde) {
   return r.json();
 }
 
-async function yukle() {
-  const r = await fetch(`${URL_}/rest/v1/nobet?select=*&order=gun.asc,baslangic.asc`, { headers: H });
+async function al(yol) {
+  const r = await fetch(`${URL_}/rest/v1/${yol}`, { headers: H });
   if (!r.ok) throw new Error("Veri alınamadı");
-  nobetler = await r.json();
+  return r.json();
+}
+
+async function yukle() {
+  [nobetler, kisiler, puanlar] = await Promise.all([
+    al("nobet?select=*&order=gun.asc,baslangic.asc"),
+    al("kisi?select=*&order=ad.asc"),
+    al("puan?select=*&order=olusturma.desc&limit=500")
+  ]);
   ciz();
 }
 
@@ -250,11 +312,63 @@ function ozetCiz() {
   $("ozet").innerHTML = sirali.length
     ? sirali.map(([k, s]) => `<span>${kacis(k)} · <b>${s}</b></span>`).join("")
     : `<span style="color:var(--soluk)">Henüz kayıt yok</span>`;
-  $("kisiListe").innerHTML = sirali.map(([k]) => `<option value="${kacis(k)}">`).join("");
+  const tum = [...new Set([...kisiler.map(k => k.ad), ...sirali.map(([k]) => k)])];
+  $("kisiListe").innerHTML = tum.map(k => `<option value="${kacis(k)}">`).join("");
 }
 
+function kisilerCiz() {
+  $("kisiler").innerHTML = kisiler.length
+    ? kisiler.map(k => `<span class="cip">${kacis(k.ad)}${pin ? `<button class="x" data-kisi-sil="${k.id}" title="Listeden çıkar">×</button>` : ""}</span>`).join("")
+    : `<span style="color:var(--soluk)">${pin ? "Henüz kimse yok. Aşağıdan ekleyin." : "Henüz liste yok."}</span>`;
+  $("kisiForm").hidden = !pin;
+}
+
+// --- anneanne reytingi ---
+const PUAN_YAZI = ["", "Hemşireyle kavga etti 😤", "Huysuz bir gece 😒", "İdare eder 😐", "Tatlıydı 😊", "Melek, 10 numara 😇"];
+const yildizYaz = n => "★".repeat(n) + "☆".repeat(5 - n);
+
+function puanCiz() {
+  const ort = puanlar.length ? puanlar.reduce((t, p) => t + p.yildiz, 0) / puanlar.length : 0;
+  $("puanBas").innerHTML = puanlar.length
+    ? `<div class="buyuk">${ort.toFixed(1).replace(".", ",")}</div>
+       <div><div class="yildizlar" style="font-size:1.3rem">${yildizYaz(Math.round(ort))}</div>
+       <div class="alt2">${puanlar.length} değerlendirme · ${PUAN_YAZI[Math.round(ort)].replace(/ \S+$/, "")}</div></div>`
+    : `<div class="alt2">Henüz kimse puan vermedi. İlk yorumu siz yazın.</div>`;
+  $("yildizSec").innerHTML = [1,2,3,4,5].map(i => `<button type="button" data-yildiz="${i}" class="${i <= yildiz ? "dolu" : ""}" aria-label="${i} yıldız">★</button>`).join("");
+  $("puanEtiket").textContent = yildiz ? PUAN_YAZI[yildiz] : "Yıldıza dokunun";
+  $("yorumlar").innerHTML = puanlar.slice(0, 10).map(p => `<div class="yorum">
+      <div class="ust"><b>${kacis(p.kim)}</b><span>${fmtGun.format(tarihObj(p.gun))}${pin ? ` <button class="kucuk tehlike" data-puan-sil="${p.id}" style="padding:0 6px">×</button>` : ""}</span></div>
+      <div class="yildizlar">${yildizYaz(p.yildiz)}</div>
+      ${p.yorum ? `<p>${kacis(p.yorum)}</p>` : ""}</div>`).join("");
+}
+
+$("yildizSec").addEventListener("click", e => {
+  const b = e.target.closest("[data-yildiz]");
+  if (!b) return;
+  yildiz = Number(b.dataset.yildiz);
+  puanCiz();
+});
+
+$("puanForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("puanHata").textContent = "";
+  if (!yildiz) { $("puanHata").textContent = "Önce yıldız seçin."; return; }
+  const kim = $("pKim").value.trim();
+  try {
+    const r = await fetch(`${URL_}/rest/v1/puan`, {
+      method: "POST", headers: { ...H, Prefer: "return=minimal" },
+      body: JSON.stringify({ gun: isoGun(new Date()), kim, yildiz, yorum: $("pYorum").value.trim() || null })
+    });
+    if (!r.ok) throw new Error();
+    hafizaYaz("refakat_ad", kim);
+    yildiz = 0; $("pYorum").value = "";
+    await yukle();
+    $("puanEtiket").textContent = "Teşekkürler, puanınız kaydedildi 🙏";
+  } catch { $("puanHata").textContent = "Gönderilemedi, tekrar deneyin."; }
+});
+
 function ciz() {
-  durumCiz(); takvimCiz(); ozetCiz();
+  durumCiz(); takvimCiz(); ozetCiz(); kisilerCiz(); puanCiz();
   $("bant").hidden = !pin;
   $("duzenleBtn").hidden = !!pin;
   $("gecmisBtn").textContent = gecmisGoster ? "Geçmişi gizle" : "Geçmiş günleri göster";
@@ -300,15 +414,75 @@ function formAc(nobet, gun) {
   duzenlenen = nobet || null;
   $("nobetHata").textContent = "";
   $("nobetBaslik").textContent = nobet ? "Nöbeti düzenle" : "Nöbet ata";
-  $("fKisi").value = nobet ? nobet.kisi : "";
+  secili = new Set(nobet ? [nobet.kisi] : []);
+  $("fKisiEtiket").textContent = nobet ? "Kim kalacak?" : "Kim kalacak? (birden fazla seçilebilir)";
+  $("fYeniKisi").value = "";
+  secimCiz();
   $("fGun").value = nobet ? nobet.gun : gun;
   $("fBas").value = nobet ? kisaSaat(nobet.baslangic) : "20:00";
   $("fBit").value = nobet ? kisaSaat(nobet.bitis) : "08:00";
   $("fNot").value = nobet ? (nobet.notu || "") : "";
   $("silBtn").hidden = !nobet;
   $("nobetDlg").showModal();
-  $("fKisi").focus();
 }
+
+function secimCiz() {
+  const adlar_ = [...new Set([...kisiler.map(k => k.ad), ...secili])];
+  $("fKisiler").innerHTML = adlar_.length
+    ? adlar_.map(a => `<button type="button" class="cip ${secili.has(a) ? "secili" : ""}" data-sec="${kacis(a)}">${kacis(a)}</button>`).join("")
+    : `<span style="color:var(--soluk);font-size:.9rem">Liste boş, aşağıdan kişi ekleyin.</span>`;
+}
+
+$("fKisiler").addEventListener("click", e => {
+  const b = e.target.closest("[data-sec]");
+  if (!b) return;
+  const ad = b.dataset.sec;
+  if (duzenlenen) secili = new Set([ad]);          // var olan nöbet tek kişilik satır
+  else secili.has(ad) ? secili.delete(ad) : secili.add(ad);
+  secimCiz();
+});
+
+async function kisiEkle(ad, hataYeri) {
+  ad = ad.trim();
+  if (!ad) return false;
+  const ok = await yetkiliCagri("kisi_ekle", { p_ad: ad }, hataYeri);
+  if (ok) kisiler = await al("kisi?select=*&order=ad.asc");
+  return ok;
+}
+
+$("fYeniBtn").addEventListener("click", async () => {
+  const ad = $("fYeniKisi").value.trim();
+  if (!ad) return;
+  try {
+    if (await kisiEkle(ad, "nobetHata")) {
+      if (duzenlenen) secili = new Set([ad]); else secili.add(ad);
+      $("fYeniKisi").value = ""; secimCiz(); kisilerCiz();
+    }
+  } catch { $("nobetHata").textContent = "Eklenemedi, bağlantıyı kontrol edin."; }
+});
+
+$("kisiForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("kisiHata").textContent = "";
+  try { if (await kisiEkle($("yeniKisi").value, "kisiHata")) { $("yeniKisi").value = ""; ciz(); } }
+  catch { $("kisiHata").textContent = "Eklenemedi, bağlantıyı kontrol edin."; }
+});
+
+$("kisiler").addEventListener("click", async e => {
+  const b = e.target.closest("[data-kisi-sil]");
+  if (!b) return;
+  const k = kisiler.find(x => x.id === b.dataset.kisiSil);
+  if (!k || !confirm(`${k.ad} listeden çıkarılsın mı? (Geçmiş nöbetleri silinmez.)`)) return;
+  try { if (await yetkiliCagri("kisi_sil", { p_id: k.id }, "kisiHata")) await yukle(); }
+  catch { $("kisiHata").textContent = "Silinemedi."; }
+});
+
+$("yorumlar").addEventListener("click", async e => {
+  const b = e.target.closest("[data-puan-sil]");
+  if (!b || !confirm("Bu değerlendirme silinsin mi?")) return;
+  try { if (await yetkiliCagri("puan_sil", { p_id: b.dataset.puanSil }, "puanHata")) await yukle(); }
+  catch { $("puanHata").textContent = "Silinemedi."; }
+});
 
 async function yetkiliCagri(ad, govde, hataYeri) {
   const s = await rpc(ad, { p_pin: pin, ...govde });
@@ -320,13 +494,18 @@ async function yetkiliCagri(ad, govde, hataYeri) {
 
 $("nobetForm").addEventListener("submit", async e => {
   e.preventDefault();
+  $("nobetHata").textContent = "";
+  if (!secili.size) { $("nobetHata").textContent = "En az bir kişi seçin."; return; }
   try {
-    const ok = await yetkiliCagri("nobet_kaydet", {
-      p_id: duzenlenen ? duzenlenen.id : null,
-      p_gun: $("fGun").value, p_bas: $("fBas").value, p_bit: $("fBit").value,
-      p_kisi: $("fKisi").value.trim(), p_not: $("fNot").value
-    }, "nobetHata");
-    if (ok) { $("nobetDlg").close(); await yukle(); }
+    for (const ad of secili) {
+      const ok = await yetkiliCagri("nobet_kaydet", {
+        p_id: duzenlenen ? duzenlenen.id : null,
+        p_gun: $("fGun").value, p_bas: $("fBas").value, p_bit: $("fBit").value,
+        p_kisi: ad, p_not: $("fNot").value
+      }, "nobetHata");
+      if (!ok) return;
+    }
+    $("nobetDlg").close(); await yukle();
   } catch { $("nobetHata").textContent = "Kaydedilemedi, bağlantıyı kontrol edin."; }
 });
 
@@ -354,6 +533,7 @@ $("dahaBtn").addEventListener("click", () => { gunSayisi += 14; ciz(); });
 
 // açılış
 (async () => {
+  $("pKim").value = hafizaOku("refakat_ad") || "";
   const kayitli = hafizaOku("refakat_pin");
   if (kayitli) {
     try { if ((await rpc("pin_kontrol", { p_pin: kayitli })) === "ok") pin = kayitli; else hafizaYaz("refakat_pin", null); } catch {}
